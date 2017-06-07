@@ -88,10 +88,10 @@ for record in vcf_reader:
 
     vcfGraph.add((gene_uri, DCTERMS.identifier, Literal(vcfInfo[4])))
     vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P3433"), gene_uri))
-    transcript_uri = URIRef("http://umc.nl/genetics/FAIR/variant/"+vcfInfo[6])
 
+    transcript_uri = URIRef("http://rdf.ebi.ac.uk/resource/ensembl.transcript/"+vcfInfo[6])
     vcfGraph.add((transcript_uri, DCTERMS.identifier, Literal(vcfInfo[6])))
-    vcfGraph.add((gene_uri, URIRef("http://umc.nl/genetics/FAIR/properties/has_transcript"), transcript_uri))
+    vcfGraph.add((transcript_uri, URIRef("http://purl.obolibrary.org/obo/so#transcribed_from"), gene_uri))
 
     # Add samples
     measurement_uri = URIRef("http://umc.nl/genetics/FAIR/measurement/"+str(i))
@@ -105,4 +105,4 @@ for record in vcf_reader:
     vcfGraph.add((analysis_uri, URIRef("http://semanticscience.org/resource/SIO_000628"), measurement_uri))
     vcfGraph.add((analysis_uri, URIRef("http://www.w3.org/ns/prov#used"), sample_uri))
 
-vcfGraph.serialize(destination='/tmp/UMC_gene.turtle', format='turtle')
+vcfGraph.serialize(destination='UMC_gene.ttl', format='turtle')
