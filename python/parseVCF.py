@@ -6,7 +6,7 @@ import sys
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 chrom = dict()
-chrom["X"]= "NC_000023.11"
+chrom["X"] = "NC_000023.11"
 chrom["Y"] = "NC_000024.10"
 chrom["14"] = "NC_000014.9"
 chrom["17"] = "NC_000017.11"
@@ -38,71 +38,71 @@ vcfGraph.bind("wikidata_prop", URIRef("http://www.wikidata.org/prop/direct/"))
 wikidataprop = Namespace("http://www.wikidata.org/prop/direct/")
 
 # vcf_reader = vcf.Reader(open('/Users/andra/Downloads/CGC_flagship.missense_variants_snpEff_snpSift_GoNLv5.vcf', 'r'))
-vcf_reader = vcf.Reader(open('/Users/andra/Downloads/CGC_flagship.missense_variants_snpEff_snpSift_GoNLv5.header.vcf', 'r'))
+vcf_reader = vcf.Reader(open('../../CGC_flagship.missense_variants_snpEff_snpSift_GoNLv5.header.vcf', 'r'))
+analysis_uri = URIRef("http://umc.nl/genetics/FAIR/analysis/1")  # TODO: Change to project analysis and uuid
+sample_uri = URIRef("http://umc.nl/genetics/FAIR/sample/1")  # TODO: Change to project sample
 
-## Get Ensembl gene ID URI
-sparql = SPARQLWrapper("https://query.wikidata.org/bigdata/namespace/wdq/sparql")
+# Get Ensembl gene ID URI
+# sparql = SPARQLWrapper("https://query.wikidata.org/bigdata/namespace/wdq/sparql")
+#
+# ensemblURI = dict()
+# ensembl_geneQuery = """SELECT ?item ?itemLabel ?ensemblGeneID
+#            WHERE
+#            {
+#                ?item wdt:P594 ?ensemblGeneID ;
+#                      wdt:P703 wd:Q15978631 .
+#                SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+#            }
+#            """
+# print(ensembl_geneQuery)
+# sparql.setQuery(ensembl_geneQuery)
+# sparql.setReturnFormat(JSON)
+# results = sparql.query().convert()
+# for result in results["results"]["bindings"]:
+#     print(result["item"]["value"], result["ensemblGeneID"]["value"])
+#     ensemblURI[result["ensemblGeneID"]["value"]] = result["item"]["value"]
 
-ensemblURI = dict()
-ensembl_geneQuery = """SELECT ?item ?itemLabel ?ensemblGeneID
-           WHERE
-           {
-               ?item wdt:P594 ?ensemblGeneID ;
-                     wdt:P703 wd:Q15978631 .
-               SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
-           }
-           """
-print(ensembl_geneQuery)
-sparql.setQuery(ensembl_geneQuery)
-sparql.setReturnFormat(JSON)
-results = sparql.query().convert()
-for result in results["results"]["bindings"]:
-  print(result["item"]["value"], result["ensemblGeneID"]["value"])
-  ensemblURI[result["ensemblGeneID"]["value"]] = result["item"]["value"]
-
+i = 0  # TODO: change to uuid
 for record in vcf_reader:
-   #print(record)
-   #print(record.CHROM)
-   #print(record.POS)
-   # print(record.INFO['ANN'])
-   print(record.samples[0]["GT"])
+    i += 1  # TODO: change to uuid
+    chrom_nr = chrom[record.CHROM]
 
-   for field in record.INFO['ANN'][0].split("|"):
-      print(field)
+    print("hgvs: "+chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0]))
+    variant_uri = URIRef("http://umc.nl/genetics/FAIR/"+urllib.parse.quote_plus(chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0])))
+    vcfGraph.add((variant_uri, RDF.type, URIRef("http://purl.obolibrary.org/obo/SO_0001060")))
+    vcfGraph.add((variant_uri, DCTERMS.identifier, Literal(chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0]))))
+    vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P3331"), Literal(chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0]))))
+    chromosomeIRI = URIRef("http://umc.nl/genetics/FAIR/chromosome/"+chrom_nr)
+    vcfGraph.add((chromosomeIRI, RDF.type, URIRef("https://www.wikidata.org/wiki/Q37748")))
+    vcfGraph.add((chromosomeIRI, DCTERMS.identifier, Literal(chrom_nr)))
+    vcfGraph.add((variant_uri, DCTERMS.isPartOf, chromosomeIRI))
 
-   chrom_nr = chrom[record.CHROM]
+    # Genomic START
+    vcfGraph.add((variant_uri, wikidataprop.P644, Literal(record.POS)))
+    vcfGraph.add((variant_uri, wikidataprop.P645, Literal(record.POS)))
+    # print(record.)
+    vcfInfo = record.INFO['ANN'][0].split("|")
 
+    gene_uri = URIRef("http://rdf.ebi.ac.uk/resource/ensembl/"+vcfInfo[4])
+    # print(record.INFO['ANN'][0])
 
-   print("hgvs: "+chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0]))
-   variant_uri = URIRef("http://umc.nl/genetics/FAIR/"+urllib.parse.quote_plus(chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0])))
-   vcfGraph.add((variant_uri, RDF.type, URIRef("http://purl.obolibrary.org/obo/SO_0001060")))
-   vcfGraph.add((variant_uri, DCTERMS.identifier, Literal(chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0]))))
-   vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P3331"), Literal(chrom_nr+":g."+str(record.POS)+str(record.REF)+">"+str(record.ALT[0]))))
-   chromosomeIRI = URIRef("http://umc.nl/genetics/FAIR/chromosome/"+chrom_nr)
-   vcfGraph.add((chromosomeIRI, RDF.type, URIRef("https://www.wikidata.org/wiki/Q37748")))
-   vcfGraph.add((chromosomeIRI, DCTERMS.identifier, Literal(chrom_nr)))
-   vcfGraph.add((variant_uri, DCTERMS.isPartOf, chromosomeIRI))
+    vcfGraph.add((gene_uri, DCTERMS.identifier, Literal(vcfInfo[4])))
+    vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P3433"), gene_uri))
+    transcript_uri = URIRef("http://umc.nl/genetics/FAIR/variant/"+vcfInfo[6])
 
-   # Genomic START
-   vcfGraph.add((variant_uri, wikidataprop.P644, Literal(record.POS)))
-   vcfGraph.add((variant_uri, wikidataprop.P645, Literal(record.POS)))
-   #print(record.)
-   vcfInfo = record.INFO['ANN'][0].split("|")
+    vcfGraph.add((transcript_uri, DCTERMS.identifier, Literal(vcfInfo[6])))
+    vcfGraph.add((gene_uri, URIRef("http://umc.nl/genetics/FAIR/properties/has_transcript"), transcript_uri))
 
+    # Add samples
+    measurement_uri = URIRef("http://umc.nl/genetics/FAIR/measurement/"+str(i))
+    vcfGraph.add((measurement_uri, RDF.type, URIRef("http://www.ebi.ac.uk/efo/EFO_0001444")))
+    vcfGraph.add((measurement_uri, URIRef("http://semanticscience.org/resource/SIO_000300"), Literal(record.samples[0]['GT'])))
+    vcfGraph.add((measurement_uri, URIRef("http://semanticscience.org/resource/SIO_000628"), variant_uri))
 
+    vcfGraph.add((sample_uri, URIRef("http://purl.obolibrary.org/obo/GENO_0000222"), measurement_uri))
 
-
-
-
-   gene_uri = URIRef("http://rdf.ebi.ac.uk/resource/ensembl/"+vcfInfo[4])
-   print(record.INFO['ANN'][0])
-
-   vcfGraph.add((gene_uri, DCTERMS.identifier, Literal(vcfInfo[4])))
-   vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P3433"), gene_uri))
-   transcript_uri = URIRef("http://umc.nl/genetics/FAIR/variant/"+vcfInfo[6])
-
-   vcfGraph.add((transcript_uri, DCTERMS.identifier, Literal(vcfInfo[6])))
-   vcfGraph.add((gene_uri, URIRef("http://umc.nl/genetics/FAIR/properties/has_transcript"), transcript_uri))
-   # sys.exit()
+    # Link measurement and analysis
+    vcfGraph.add((analysis_uri, URIRef("http://semanticscience.org/resource/SIO_000628"), measurement_uri))
+    vcfGraph.add((analysis_uri, URIRef("http://www.w3.org/ns/prov#used"), sample_uri))
 
 vcfGraph.serialize(destination='/tmp/UMC_gene.turtle', format='turtle')
