@@ -3,6 +3,7 @@ from rdflib import Namespace, Graph, URIRef, BNode, Literal
 from rdflib.namespace import DCTERMS, RDFS, RDF, DC
 import urllib
 import sys
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 chrom = dict()
 chrom["X"]= "NC_000023.11"
@@ -36,12 +37,36 @@ vcfGraph.bind("dcterms", DCTERMS)
 vcfGraph.bind("wikidata_prop", URIRef("http://www.wikidata.org/prop/direct/"))
 wikidataprop = Namespace("http://www.wikidata.org/prop/direct/")
 
-vcf_reader = vcf.Reader(open('/Users/andra/Downloads/CGC_flagship.missense_variants_snpEff_snpSift_GoNLv5.vcf', 'r'))
+# vcf_reader = vcf.Reader(open('/Users/andra/Downloads/CGC_flagship.missense_variants_snpEff_snpSift_GoNLv5.vcf', 'r'))
+vcf_reader = vcf.Reader(open('/Users/andra/Downloads/CGC_flagship.missense_variants_snpEff_snpSift_GoNLv5.header.vcf', 'r'))
+
+## Get Ensembl gene ID URI
+sparql = SPARQLWrapper("https://query.wikidata.org/bigdata/namespace/wdq/sparql")
+
+ensemblURI = dict()
+ensembl_geneQuery = """SELECT ?item ?itemLabel ?ensemblGeneID
+           WHERE
+           {
+               ?item wdt:P594 ?ensemblGeneID ;
+                     wdt:P703 wd:Q15978631 .
+               SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+           }
+           """
+print(ensembl_geneQuery)
+sparql.setQuery(ensembl_geneQuery)
+sparql.setReturnFormat(JSON)
+results = sparql.query().convert()
+for result in results["results"]["bindings"]:
+  print(result["item"]["value"], result["ensemblGeneID"]["value"])
+  ensemblURI[result["ensemblGeneID"]["value"]] = result["item"]["value"]
+
 for record in vcf_reader:
    #print(record)
    #print(record.CHROM)
    #print(record.POS)
    # print(record.INFO['ANN'])
+   print(record.samples[0]["GT"])
+
    for field in record.INFO['ANN'][0].split("|"):
       print(field)
 
@@ -63,7 +88,13 @@ for record in vcf_reader:
    vcfGraph.add((variant_uri, wikidataprop.P645, Literal(record.POS)))
    #print(record.)
    vcfInfo = record.INFO['ANN'][0].split("|")
-   gene_uri = URIRef("http://umc.nl/genetics/FAIR/gene/"+vcfInfo[3])
+
+
+
+
+
+
+   gene_uri = URIRef("http://rdf.ebi.ac.uk/resource/ensembl/"+vcfInfo[4])
    print(record.INFO['ANN'][0])
 
    vcfGraph.add((gene_uri, DCTERMS.identifier, Literal(vcfInfo[4])))
@@ -74,4 +105,4 @@ for record in vcf_reader:
    vcfGraph.add((gene_uri, URIRef("http://umc.nl/genetics/FAIR/properties/has_transcript"), transcript_uri))
    # sys.exit()
 
-vcfGraph.serialize(destination='/tmp/UMC_gene.nt', format='n3')
+vcfGraph.serialize(destination='/tmp/UMC_gene.turtle', format='turtle')
