@@ -1,0 +1,5 @@
+#QUERY <http://localhost:9999/bigdata/umc_fair/kb/sparql
+SELECT * WHERE {
+  ?s ?p ?o .
+}
+LIMIT 10

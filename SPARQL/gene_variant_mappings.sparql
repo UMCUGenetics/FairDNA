@@ -1,4 +1,3 @@
-#QUERY <http://localhost:9999/blazegraph/namespace/kb/sparql>
 prefix dcterms: <http://purl.org/dc/terms/>
 prefix ns1: <http://purl.obolibrary.org/obo/>
 prefix ns2: <http://semanticscience.org/resource/>
@@ -10,9 +9,15 @@ prefix wikidata_prop: <http://www.wikidata.org/prop/direct/>
 prefix xml: <http://www.w3.org/XML/1998/namespace>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT (COUNT(*) as ?count)
+SELECT DISTINCT ?ensembl_gene_id ?ncbi_gene_id ?hgvs
 WHERE{
-  ?variant <http://www.wikidata.org/prop/direct/P3433> <http://rdf.ebi.ac.uk/resource/ensembl/ENSG00000181143>.
-  ?measurement <http://semanticscience.org/resource/SIO_000628> ?variant.
-  ?measurement <http://semanticscience.org/resource/SIO_000300> ?gt
+  VALUES ?ensGene {<http://rdf.ebi.ac.uk/resource/ensembl/ENSG00000181143>}
+  ?variant <http://www.wikidata.org/prop/direct/P3433> ?ensGene ;
+  		 dcterms:identifier ?hgvs .
+  ?ensGene dcterms:identifier ?ensembl_gene_id .
+             
+  SERVICE <https://query.wikidata.org/bigdata/namespace/wdq/sparql> {
+    ?gene wikidata_prop:P351 ?ncbi_gene_id ;
+          wikidata_prop:P594 ?ensembl_gene_id .
+    }
 }
