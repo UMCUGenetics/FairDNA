@@ -81,7 +81,7 @@ for record in vcf_reader:
     vcfGraph.add((variant_uri, RDF.type, URIRef("http://purl.obolibrary.org/obo/SO_0001060")))
     vcfGraph.add((variant_uri, DCTERMS.identifier, Literal(variant_hgvs)))
     vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P3331"), Literal(variant_hgvs)))
-    vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P2576"), URIRef("http://rdf.biosemantics.org/data/genomeassemblies/hg19")))
+    vcfGraph.add((variant_uri, URIRef("http://www.wikidata.org/prop/direct/P2576"), Literal("hg19")))
     chromosomeIRI = URIRef(oncoxl_uri + "/rdf/chromosome/"+chrom_nr)
     vcfGraph.add((chromosomeIRI, RDF.type, URIRef("https://www.wikidata.org/wiki/Q37748")))
     vcfGraph.add((chromosomeIRI, DCTERMS.identifier, Literal(chrom_nr)))
@@ -114,7 +114,5 @@ for record in vcf_reader:
     # Link measurement and analysis
     vcfGraph.add((analysis_uri, URIRef("http://semanticscience.org/resource/SIO_000628"), measurement_uri))
     vcfGraph.add((analysis_uri, URIRef("http://www.w3.org/ns/prov#used"), sample_uri))
-
-
 
 vcfGraph.serialize(destination='UMC_gene.ttl', format='turtle')
