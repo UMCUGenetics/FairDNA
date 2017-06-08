@@ -1,0 +1,13 @@
+PREFIX efo: <http://www.ebi.ac.uk/efo/>
+PREFIX sio: <http://semanticscience.org/resource/>
+
+SELECT DISTINCT ?analysisType ?measurement ?value ?geneProduct {
+  
+  ?analysis sio:SIO_000628 ?measurement;
+            a ?analysisType.
+
+  ?measurement a efo:EFO_0001444, ?type;
+                 sio:SIO_000300 ?value;
+                 sio:SIO_000628 ?geneProduct.
+
+}
